@@ -58,16 +58,19 @@ class Player(graphics.Drawable):
                 a = self.balls[ia]
                 b = self.balls[ib]
 
+                if a.mergable and b.mergable:
+                    continue
+
                 if a.weight < b.weight:
                     a, b = b, a
                     ia, ib = ib, ia
 
                 if 0.2 <= utility.length(a.position - b.position) <= a.radius + b.radius:
                     b.temporary_forces.append(
-                        utility.normalize(b.position - a.position)
+                        utility.normalize(b.position - a.position) * (a.weight / (a.weight + b.weight))
                     )
                     a.temporary_forces.append(
-                        utility.normalize(a.position - b.position)
+                        utility.normalize(a.position - b.position) * (b.weight / (a.weight + b.weight))
                     )
 
         for ball in self.balls:

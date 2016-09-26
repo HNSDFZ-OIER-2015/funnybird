@@ -12,14 +12,14 @@ INITIAL_BALL_WEIGHT = 10
 BALL_MIN_MOVEMENT = 20.0
 BALL_MIN_WEIGHT = 1
 BALL_MIN_RADIUS = 4
-BALL_SMALLIZE_SPEED = 0.1
+BALL_SMALLIZE_SPEED = 0.05
 
 BORDER_LEFT = 0
 BORDER_RIGHT = 850
 BORDER_TOP = 0
 BORDER_BOTTOM = 550
 
-BALL_MERGE_SPAN = 999
+BALL_MERGE_SPAN = 10
 
 
 # Let S denote to weight
@@ -207,6 +207,7 @@ class Ball(graphics.Drawable):
         if len(self.temporary_forces) == 0:
             forcesum += self.direction
         offest = forcesum * self.speed * delta * rate
+
         self.position += offest
         self.temporary_forces.clear()
 
