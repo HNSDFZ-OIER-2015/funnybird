@@ -3,6 +3,7 @@ from math import *
 _current_id = 0
 def generate_id():
     global _current_id
+    _current_id += 1
 
     return _current_id
 

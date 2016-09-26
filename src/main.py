@@ -9,24 +9,21 @@ import graphics
 from math import *
 
 from ball import Ball
+from player import Player
 
 
 WINDOW_WIDTH = 850
 WINDOW_HEIGHT = 550
 
 INITIAL_FOOD = 100
-FOOD_MIN_RADIUS = 4
-FOOD_MAX_RADIUS = 5
-
 
 foods = []
-animation = []
-player = Ball()
+player = Player()
 
 
 def produce_food(position):
     food = Ball()
-    food.weight = 1
+    food.weight = 10
     food.position = position
 
     return food
@@ -54,15 +51,15 @@ shotted = False
 def on_keypress(sender, args):
     global shotted
     global player
+    global foods
 
     if args.pressed:
         if args.code == graphics.Keyboard.W:
-            if player.weight > 20 and not shotted:
+            if not shotted:
                 shotted = True
-                animation.append(player.split(1))
+                player.balls += player.shot()
         elif args.code == graphics.Keyboard.SPACE:
-            if player.weight > 30:
-                animation.append(player.split(int(player.weight / 2)))
+            player.split()
     elif args.released:
         shotted = False
 
@@ -72,17 +69,11 @@ def update():
     global player
 
     for i in range(0, len(foods)):
-        if utility.length(
-                foods[i].position - player.position + (foods[i].radius, foods[i].radius)
-            ) <= player.radius:
-            player.weight += 1
+        if player.try_eat(foods[i]):
             foods[i] = random_food()
 
-    player.direction = graphics.Mouse.get_position(graphics.window)
+    player.set_direction(graphics.Mouse.get_position(graphics.window))
     player.update()
-
-    for splition in animation:
-        splition.update()
 
 
 def render():
@@ -93,9 +84,6 @@ def render():
 
     graphics.draw(player)
 
-    for splition in animation:
-        graphics.draw(splition)
-
     graphics.present()
 
 
@@ -103,7 +91,7 @@ def render():
 
 graphics.create_window()
 
-graphics.set_handler(graphics.CloseEvent, lambda sender, args : close_window())
+graphics.set_handler(graphics.CloseEvent, lambda sender, args : graphics.close_window())
 graphics.set_handler(graphics.MouseButtonEvent, on_mouse_click)
 graphics.set_handler(graphics.KeyEvent, on_keypress)
 

@@ -7,18 +7,19 @@ import graphics
 from math import *
 
 
-INITIAL_BALL_WEIGHT = 500
+INITIAL_BALL_WEIGHT = 10
 
 BALL_MIN_MOVEMENT = 20.0
 BALL_MIN_WEIGHT = 1
 BALL_MIN_RADIUS = 4
-BALL_SMALLIZE_SPEED = 0.3
-BALL_SLOWDOWNRATE_DISTANCE = 20
+BALL_SMALLIZE_SPEED = 0.1
 
 BORDER_LEFT = 0
 BORDER_RIGHT = 850
 BORDER_TOP = 0
 BORDER_BOTTOM = 550
+
+BALL_MERGE_SPAN = 999
 
 
 # Let S denote to weight
@@ -40,7 +41,11 @@ class Ball(graphics.Drawable):
             id = utility.generate_id()
 
         self._id = id
+        self._last_merge = time.time()
         self._mergable = False
+        self._smooth_weight = 0
+        self._forces = []
+        self.temporary_forces = []
 
         self._weight = 0
         self._instance = graphics.CircleShape()
@@ -60,6 +65,17 @@ class Ball(graphics.Drawable):
     @id.setter
     def id(self):
         self._id = id
+
+    @property
+    def mergable(self):
+        return self._mergable
+
+    @mergable.setter
+    def mergable(self, value):
+        if value == False:
+            self._last_merge = time.time()
+
+        self._mergable = value
 
     @property
     def color(self):
@@ -134,10 +150,26 @@ class Ball(graphics.Drawable):
 
     @property
     def speed(self):
-        if self.weight <= 2:
-            return 200
+        return Ball.speed_by_weight(self.weight)
 
-        return max(120 - 3 * sqrt(self.weight), BALL_MIN_MOVEMENT)
+    @property
+    def forces(self):
+        return self._forces
+
+    @forces.setter
+    def forces(self, value):
+        self._forces = value
+
+    def speed_by_weight(weight):
+        return max(120 - 3 * sqrt(weight), BALL_MIN_MOVEMENT)
+
+    @property
+    def smooth_weight(self):
+        return self._smooth_weight
+
+    @smooth_weight.setter
+    def smooth_weight(self, value):
+        self._smooth_weight = value
 
     def split(self, value):
         if value < 1:
@@ -145,14 +177,17 @@ class Ball(graphics.Drawable):
         if value > self.weight:
             raise ValueError("value should be smaller than the weight of itself.")
 
-        self.weight -= value
+        self.smooth_weight -= value
         new = Ball(
-            position = self.position + self._direction * self.radius,
+            position = self.position,
             color = self.color,
             id = self.id
         )
-        new.direction = self.position + self._direction * self.speed * (1 + random.random())
+        new.direction = self.position + self._direction * (
+            self.radius + Ball.speed_by_weight(value) * 0.7
+        )
         new.weight = value
+        new.forces.append([new.direction * 2, 1])
 
         return new
 
@@ -162,16 +197,43 @@ class Ball(graphics.Drawable):
         if dist < 1:
             return
 
-        rate = min((dist / BALL_SLOWDOWNRATE_DISTANCE), 1)
-        offest = self.direction * self.speed * delta * rate
+        forcesum = graphics.Vector2(0, 0)
+        for force in self._forces:
+            forcesum += force[0]
+        for force in self.temporary_forces:
+            forcesum += force
+
+        rate = min((dist / self.radius), 1)
+        if len(self.temporary_forces) == 0:
+            forcesum += self.direction
+        offest = forcesum * self.speed * delta * rate
         self.position += offest
+        self.temporary_forces.clear()
 
     def _update_weight(self, delta):
-        self.weight -= BALL_SMALLIZE_SPEED * delta
+        smooth_delta = 0
+        if abs(self.smooth_weight) < 2:
+            smooth_delta = self.smooth_weight
+            self.smooth_weight = 0
+        else:
+            smooth_delta = self.smooth_weight * 0.2
+            self.smooth_weight -= smooth_delta
+
+        self.weight += -BALL_SMALLIZE_SPEED * delta + smooth_delta
 
     def update(self):
-        delta_time = time.time() - self._last_time
+        current_time = time.time()
+        delta_time = current_time - self._last_time
         self._last_time = time.time()
+
+        for i in range(len(self._forces) - 1, -1, -1):
+            self._forces[i][1] -= delta_time
+
+            if self._forces[i][1] <= 0:
+                self._forces.pop(i)
+
+        if not self.mergable and current_time - self._last_merge >= BALL_MERGE_SPAN:
+            self.mergable = True
 
         self._update_movement(delta_time)
         self._update_weight(delta_time)
