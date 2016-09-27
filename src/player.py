@@ -51,26 +51,31 @@ class Player(graphics.Drawable):
             ball.direction = position
 
     def update(self):
+        self.balls = sorted(
+            self.balls,
+            key = lambda ball : utility.length(ball.position - ball._direction_point)
+        )
+
         for i in range(0, len(self.balls)):
             for j in range(i + 1, len(self.balls)):
-                ia = i
-                ib = j
-                a = self.balls[ia]
-                b = self.balls[ib]
+                a = self.balls[i]
+                b = self.balls[j]
 
                 if a.mergable and b.mergable:
                     continue
 
-                if a.weight < b.weight:
-                    a, b = b, a
-                    ia, ib = ib, ia
-
                 if 0.2 <= utility.length(a.position - b.position) <= a.radius + b.radius:
+                    vec = b.position - a.position
+                    direction = utility.normalize(graphics.Vector2(vec.y, -vec.x))
+
+                    if vec.x * b._direction.y - vec.y * b._direction.x > 0:
+                        direction *= -1
+
                     b.temporary_forces.append(
-                        utility.normalize(b.position - a.position) * (a.weight / (a.weight + b.weight))
+                        direction * 0.5
                     )
-                    a.temporary_forces.append(
-                        utility.normalize(a.position - b.position) * (b.weight / (a.weight + b.weight))
+                    b.temporary_forces.append(
+                        utility.normalize(vec) * 0.5
                     )
 
         for ball in self.balls:

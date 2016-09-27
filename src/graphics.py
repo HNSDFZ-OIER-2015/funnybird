@@ -15,6 +15,7 @@ def create_window(width = 850, height = 550, title = "Game Window"):
 
     window = RenderWindow(VideoMode(width, height), title)
     window.framerate_limit = 60
+    # window.settings.antialiasing_level = 8
 
 
 def close_window():

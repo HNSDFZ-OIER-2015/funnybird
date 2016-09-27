@@ -161,7 +161,7 @@ class Ball(graphics.Drawable):
         self._forces = value
 
     def speed_by_weight(weight):
-        return max(120 - 3 * sqrt(weight), BALL_MIN_MOVEMENT)
+        return max(80 - 3 * sqrt(weight), BALL_MIN_MOVEMENT)
 
     @property
     def smooth_weight(self):

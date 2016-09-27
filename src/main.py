@@ -106,5 +106,6 @@ for i in range(0, INITIAL_FOOD):
 
 while graphics.is_open():
     graphics.do_events()
+
     update()
     render()
